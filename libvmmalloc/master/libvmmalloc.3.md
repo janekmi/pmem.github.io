@@ -1,9 +1,8 @@
 ---
 layout: manual
 Content-Style: 'text/css'
-title: libpmem
+title: libvmmalloc(3)
 ...
-# libvmmalloc
 
 [NAME](#name)<br />
 [SYNOPSIS](#synopsis)<br />
@@ -16,11 +15,11 @@ title: libpmem
 [SEE ALSO](#see-also)
 
 
-### NAME
+### NAME ###
 
 **libvmmalloc** − general purpose volatile memory allocation library
 
-### SYNOPSIS
+### SYNOPSIS ###
 
 ```
 $ LD_PRELOAD=libvmmalloc.so command [ args... ]
@@ -37,33 +36,34 @@ or
 ```
 $ cc [ flag... ] file... -lvmmalloc [ library... ]
 ```
-<br />
-**Most commonly used functions:**
 
-: **void** **\*malloc**(**size_t** size);
+##### Most commonly used functions: #####
 
-  **void** **free**(**void \***ptr);
+```c
+void *malloc(size_t size);
 
-  **void** **\*calloc**(**size_t** number, **size_t** size);
+void free(void *ptr);
 
-  **void** **\*realloc**(**void \***ptr, **size_t** size);
+void *calloc(size_t number, size_t size);
 
-  **int** **posix_memalign**(**void \*\***memptr, **size_t** alignment, **size_t** size);
+void *realloc(void *ptr, size_t size);
 
-  **void** **\*aligned_alloc**(**size_t** alignment, **size_t** size);
+int posix_memalign(void **memptr, size_t alignment, size_t size);
 
-  **void** **\*memalign**(**size_t** alignment, **size_t** size);
+void *aligned_alloc(size_t alignment, size_t size);
 
-  **void** **\*valloc**(**size_t** size);
+void *memalign(size_t alignment, size_t size);
 
-  **void** **\*pvalloc**(**size_t** size);
+void *valloc(size_t size);
 
-  **size_t** **malloc_usable_size**(**const void \***ptr);
+void *pvalloc(size_t size);
 
-  **void** **cfree**(**void \***ptr);
+size_t malloc_usable_size(const void *ptr);
 
+void cfree(void *ptr);
+```
 
-### DESCRIPTION
+### DESCRIPTION ###
 
 **libvmmalloc** transparently converts all the dynamic memory allocations into Persistent Memory allocations.
 
@@ -80,7 +80,7 @@ The memory pool acting as a system heap replacement is created automatically at 
 
 Under normal usage, **libvmmalloc** will never print messages or intentionally cause the process to exit. The library uses **pthreads**(7) to be fully MT-safe, but never creates or destroys threads itself. The library does not make use of any signals, networking, and never calls **select**() or **poll**().
 
-### ENVIRONMENT
+### ENVIRONMENT ###
 
 There are two configuration variables that **must** be set to make **libvmmalloc** work properly. If any of them is not specified, or if their values are not valid, the library prints the appropriate error message and terminates the process.
 
@@ -90,9 +90,9 @@ There are two configuration variables that **must** be set to make **libvmmalloc
 
 **VMMALLOC_POOL_SIZE**
 
-: Defines the desired size (in bytes) of the memory pool file. It must be not less than the minimum allowed size **VMMALLOC_MIN_POOL** as defined in **\<libvmmalloc.h\>.**
+: Defines the desired size (in bytes) of the memory pool file. It must be not less than the minimum allowed size **VMMALLOC_MIN_POOL** as defined in `<libvmmalloc.h>`.
 
->NOTE that due to the fact the library adds some metadata to the memory pool, the amount of actual usable space is typically less than the size of the memory pool file.
+  >NOTE that due to the fact the library adds some metadata to the memory pool, the amount of actual usable space is typically less than the size of the memory pool file.
 
 Setting the **VMMALLOC_FORK** configuration variable is optional. It controls the behavior of **libvmmalloc** in case of **fork**(3), and can be set to the following values:
 
@@ -102,11 +102,11 @@ Setting the **VMMALLOC_FORK** configuration variable is optional. It controls th
 
 + **2** - A copy of the entire memory pool file is created for the use of the child process. This requires additional space on the file system, but both the parent and the child process may still operate on their memory pools, not consuming the system memory resources.
 
->NOTE: In case of large memory pools, creating a copy of the pool file may stall the fork operation for a quite long time.
+   >NOTE: In case of large memory pools, creating a copy of the pool file may stall the fork operation for a quite long time.
 
 + **3** - The library first attempts to create a copy of the memory pool (as for option #2), but if it fails (i.e. because of insufficient amount of free space on the file system), it will fall back to option #1.
 
-### DEBUGGING
+### DEBUGGING ###
 
 Two versions of **libvmmalloc** are typically available on a development system. The normal version is optimized for performance. That version skips checks that impact performance and never logs any trace information or performs any run-time assertions. A second version, accessed when using the libraries under **/usr/lib/nvml_debug**, contains run-time assertions and trace points. The typical way to access the debug version is to set the environment variable **LD_LIBRARY_PATH** to **/usr/lib/nvml_debug** or **/usr/lib64/nvml_debug** depending on where the debug libraries are installed on the system. The trace points in the debug version of the library are enabled using the environment variable **VMMALLOC_LOG_LEVEL**, which can be set to the following values:
 
@@ -128,11 +128,11 @@ Setting the environment variable **VMMALLOC_LOG_LEVEL** has no effect on the non
 
 : Setting this environment variable to 1 enables logging the human-readable summary statistics at the program termination. Statistics are written only for the debug version of **libvmmalloc**.
 
-### NOTES
+### NOTES ###
 
 Unlike the normal **malloc**(), which asks the system for additional memory when it runs out, **libvmmalloc** allocates the size it is told to and never attempts to grow or shrink that memory pool.
 
-### BUGS
+### BUGS ###
 
 **libvmmalloc** may not work properly with the programs that perform **fork**(3) and do not call **exec**(3) immediately afterwards. See **ENVIRONMENT** section for more details about the experimental **fork**() support.
 
@@ -140,12 +140,12 @@ If the trace points in the debug version of the library are enabled and the proc
 
 Malloc hooks (see **malloc_hook**(3)), are not supported when using **libvmmalloc**.
 
-### ACKNOWLEDGEMENTS
+### ACKNOWLEDGEMENTS ###
 
 **libvmmalloc** depends on jemalloc, written by Jason Evans, to do the heavy lifting of managing dynamic memory allocation. See:
 
 [http://www.canonware.com/jemalloc/](http://www.canonware.com/jemalloc/)
 
-### SEE ALSO
+### SEE ALSO ###
 
 **ld.so**(8), **malloc**(3), **posix_memalign**(3), **malloc_usable_size**(3), **malloc_hook**(3), **jemalloc**(3), **libvmem**(3), **libpmem**(3).

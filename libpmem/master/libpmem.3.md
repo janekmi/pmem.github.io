@@ -1,13 +1,12 @@
 ---
 layout: manual
 Content-Style: 'text/css'
-title: libpmem
+title: libpmem(3)
 ...
 
-# libpmem
 
 [NAME](#name)<br />
-[SYNOPSI](#synopsis)<br />
+[SYNOPSIS](#synopsis)<br />
 [DESCRIPTION](#description)<br />
 [MOST COMMONLY USED FUNCTIONS](#most-commonly-used-functions)<br />
 [PARTIAL FLUSHING OPERATIONS](#partial-flushing-operations)<br />
@@ -20,60 +19,76 @@ title: libpmem
 [SEE ALSO](#see-also)
 
 
-### NAME
+### NAME ###
 
 **libpmem** − persistent memory support library
 
-### SYNOPSIS
+### SYNOPSIS ###
 
 ```c
 #include <libpmem.h>
+cc ... -lpmem
 ```
-**cc … -lpmem**
 
-**Most commonly used functions:**
+##### Most commonly used functions: #####
 
-: **int** **pmem_is_pmem**(**const void \***addr, **size_t** len);
+```c
+int pmem_is_pmem(const void *addr, size_t len);
 
-  **void** **pmem_persist**(**const void \***addr, **size_t** len);
+void pmem_persist(const void *addr, size_t len);
 
-  **int** **pmem_msync**(**const void \***addr, **size_t** len);
+int pmem_msync(const void *addr, size_t len);
 
-  **void** **\*pmem_map_file**(**const char \***path, **size_t** len, **int** flags, **mode_t** mode, **size_t \***mapped_lenp, **int** \*is_pmemp);
+void *pmem_map_file(
+	const char *path,
+	size_t len,
+	int flags,
+	mode_t mode,
+	size_t *mapped_lenp,
+	int *is_pmemp);
 
-  **int **pmem_unmap**(**void \***addr, **size_t** len);
+int pmem_unmap(void *addr, size_t len);
+```
 
-**Partial flushing operations:**
+##### Partial flushing operations: #####
 
-: **void** **pmem_flush**(**const void \***addr, **size_t** len);
+```c
+void pmem_flush(const void *addr, size_t len);
 
-  **void** **pmem_drain**(**void**);
+void pmem_drain(void);
 
-  **int** **pmem_has_hw_drain**(**void**);
+int pmem_has_hw_drain(void);
+```
 
-**Copying to persistent memory:**
+##### Copying to persistent memory: #####
 
-: **void** **\*pmem_memmove_persist**(**void \***pmemdest, **const void \***src, **size_t** len);
+```c
+void *pmem_memmove_persist(void *pmemdest, const void *src, size_t len);
 
-  **void** **\*pmem_memcpy_persist**(**void \***pmemdest, **const void \***src, **size_t** len);
+void *pmem_memcpy_persist(void *pmemdest, const void *src, size_t len);
 
-  **void** **\*pmem_memset_persist**(**void \***pmemdest, **int** c, **size_t** len);
+void *pmem_memset_persist(void *pmemdest, int c, size_t len);
 
-  **void** **\*pmem_memmove_nodrain**(**void \***pmemdest, **const void** \***src, **size_t** len);
+void *pmem_memmove_nodrain(void *pmemdest, const void *src, size_t len);
 
-  **void** **\*pmem_memcpy_nodrain**(**void \***pmemdest, **const void \***src, **size_t** len);
+void *pmem_memcpy_nodrain(void *pmemdest, const void *src, size_t len);
 
-  **void** **\*pmem_memset_nodrain**(**void \***pmemdest, **int** c, **size_t** len);
+void *pmem_memset_nodrain(void *pmemdest, int c, size_t len);
+```
 
-**Library API versioning:**
+##### Library API versioning: #####
 
-: **const char** **\*pmem_check_version**(**unsigned** major_required, **unsigned** minor_required);
+```c
+const char *pmem_check_version(unsigned major_required, unsigned minor_required);
+```
 
-**Error handling:**
+##### Error handling: #####
 
-: **const char** **\*pmem_errormsg**(**void**);
+```c
+const char *pmem_errormsg(void);
+```
 
-### DESCRIPTION
+### DESCRIPTION ###
 
 **libpmem**
 provides low-level *persistent memory* (pmem) support for
@@ -103,7 +118,7 @@ intentionally cause the process to exit.
 The only exception to this is the debugging information, when enabled,
 as described under **DEBUGGING AND ERROR HANDLING** below.
 
-### MOST COMMONLY USED FUNCTIONS
+### MOST COMMONLY USED FUNCTIONS ###
 
 Most pmem-aware applications will take advantage of higher level
 libraries that alleviate the application from calling into **libpmem**
@@ -112,50 +127,56 @@ persistence directly (via **mmap**(2)) and that wish to take on the
 responsibility for flushing stores to persistence will find the
 functions described in this section to be the most commonly used.
 
-* **int** **pmem_is_pmem**(**const void \***addr, **size_t** len);
+* ```c
+int pmem_is_pmem(const void *addr, size_t len);
+```
 
-  The **pmem_is_pmem**() function returns true only if the entire range
+  The `pmem_is_pmem()` function returns true only if the entire range
   \[*addr*, *addr*+*len*) consists of persistent memory. A true return
-  from **pmem_is_pmem**() means it is safe to use **pmem_persist**()
+  from `pmem_is_pmem()` means it is safe to use `pmem_persist()`
   and the related functions below to make changes durable for that memory
   range.
 
-  The implementation of **pmem_is_pmem**() requires a non-trivial amount
+  The implementation of `pmem_is_pmem()` requires a non-trivial amount
   of work to determine if the given range is entirely persistent memory.
-  For this reason, it is better to call **pmem_is_pmem**() once when a
+  For this reason, it is better to call `pmem_is_pmem()` once when a
   range of memory is first encountered, save the result, and use the saved
-  result to determine whether **pmem_persist**() or **msync**(2) is
+  result to determine whether `pmem_persist()` or **msync**(2) is
   appropriate for flushing changes to persistence. Calling
-  **pmem_is_pmem**() each time changes are flushed to persistence will
+  `pmem_is_pmem()` each time changes are flushed to persistence will
   not perform well.
 
->WARNING: Using **pmem_persist**() on a range where **pmem_is_pmem**()
-returns false may not do anything useful – use **msync**(2) instead.
+  >WARNING: Using `pmem_persist()` on a range where `pmem_is_pmem()`
+  returns false may not do anything useful – use **msync**(2) instead.
 
-+ **void** **pmem_persist**(**const void \***addr, **size_t** len);
++ ```c
+void pmem_persist(const void *addr, size_t len);
+```
 
   Force any changes in the range \[*addr*, *addr*+*len*) to be stored
   durably in persistent memory. This is equivalent to calling **msync**(2)
   but may be more optimal and will avoid calling into the kernel if
   possible. There are no alignment restrictions on the range described by
-  *addr* and *len*, but **pmem_persist**() may expand the range as
+  *addr* and *len*, but `pmem_persist()` may expand the range as
   necessary to meet platform alignment requirements.
 
->WARNING: Like **msync**(2), there is nothing atomic or transactional
+  >WARNING: Like **msync**(2), there is nothing atomic or transactional
 about this call. Any unwritten stores in the given range will be
 written, but some stores may have already been written by virtue of
 normal cache eviction/replacement policies. Correctly written code must
-not depend on stores waiting until **pmem_persist**() is called to
+not depend on stores waiting until `pmem_persist()` is called to
 become persistent – they can become persistent at any time before
-**pmem_persist**() is called.
+`pmem_persist()` is called.
 
-* **int** **pmem_msync**(**const void \***addr, **size_t** len);
+* ```c
+int pmem_msync(const void *addr, size_t len);
+```
 
-  The function **pmem_msync**() is like **pmem_persist**() in that it
+  The function `pmem_msync`() is like `pmem_persist()` in that it
   forces any changes in the range \[*addr*, *addr*+*len*) to be stored
   durably. Since it calls **msync**(), this function works on either
   persistent memory or a memory mapped file on traditional storage.
-  **pmem_msync**() takes steps to ensure the alignment of addresses and
+  `pmem_msync()` takes steps to ensure the alignment of addresses and
   lengths passed to **msync**() meet the requirements of that system call.
   It calls **msync**() with the *MS_SYNC* flag as described in
   **msync**(2). Typically the application only checks for the existence of
@@ -177,20 +198,22 @@ else
 /* … */
 ```
 
-  The return value of **pmem_msync**() is the return value of
+  The return value of `pmem_msync()` is the return value of
   **msync**(), which can return -1 and set errno to indicate an error.
 
 
-* **void** **\*pmem_map_file**(**const char \***path, **size_t** len, **int** flags, **mode_t** mode, **size_t \***mapped_lenp, **int \***is_pmemp);
+* ```c
+void *pmem_map_file(const char *path, size_t len, int flags, mode_t mode, size_t *mapped_lenp, int *is_pmemp);
+```
 
-  Given a *path*, **pmem_map_file**() function creates a new read/write
+  Given a *path*, `pmem_map_file()` function creates a new read/write
   mapping for the named file. It will map the file using **mmap**(2), but
   it also takes extra steps to make large page mappings more likely.
 
-  On success, **pmem_map_file**() returns a pointer to mapped area. If
+  On success, `pmem_map_file()` returns a pointer to mapped area. If
   *mapped_lenp* is not NULL, the length of the mapping is also stored at
   the address it points to. The *is_pmemp* argument, if non-NULL, points
-  to a flag that **pmem_is_pmem**() sets to say if the mapped file is
+  to a flag that `pmem_is_pmem()` sets to say if the mapped file is
   actual pmem, or if **msync**() must be used to flush writes for the
   mapped range. On error, NULL is returned, errno is set appropriately,
   and *mapped_lenp* and *is_pmemp* are left untouched.
@@ -207,7 +230,7 @@ else
   + **PMEM_FILE_EXCL** - Same meaning as **O_EXCL** on **open**(2) -
   Ensure that this call creates the file. If this flag is specified in
   conjunction with **PMEM_FILE_CREATE**, and pathname already exists,
-  then **pmem_map_file**() will fail.
+  then `pmem_map_file()` will fail.
 
   + **PMEM_FILE_TMPFILE** - Same meaning as **O_TMPFILE** on **open**(2).
   Create a mapping for an unnamed temporary file. **PMEM_FILE_CREATE**
@@ -219,37 +242,43 @@ else
   in conjunction with **PMEM_FILE_CREATE** or **PMEM_FILE_TMPFILE**,
   otherwise ignored.
 
-  If creation flags are not supplied, then **pmem_map_file**() creates a
+  If creation flags are not supplied, then `pmem_map_file()` creates a
   mapping for an existing file. In such case, *len* should be zero. The
   entire file is mapped to memory; its length is used as the length of the
   mapping and returned via *mapped_lenp*.
 
-  To delete mappings created with **pmem_map_file**(), use
-  **pmem_unmap**().
+  To delete mappings created with `pmem_map_file()`, use
+  `pmem_unmap()`.
 
 
-* **int** **pmem_unmap**(**void \***addr, **size_t** len);
+* ```c
+int pmem_unmap(void *addr, size_t len);
+```
 
-  The **pmem_unmap**() function deletes all the mappings for the
+  The `pmem_unmap()` function deletes all the mappings for the
   specified address range, and causes further references to addresses
   within the range to generate invalid memory references. It will use the
   address specified by the parameter *addr*, where *addr* must be a
-  previously mapped region. **pmem_unmap**() will delete the mappings
-  using the **munmap**(2), On success, **pmem_unmap**() returns zero. On
+  previously mapped region. `pmem_unmap()` will delete the mappings
+  using the **munmap**(2), On success, `pmem_unmap()` returns zero. On
   error, -1 is returned, and errno is set appropriately.
 
-### PARTIAL FLUSHING OPERATIONS
+### PARTIAL FLUSHING OPERATIONS ###
 
 The functions in this section provide access to the stages of flushing
 to persistence, for the less common cases where an application needs
-more control of the flushing operations than the **pmem\_persist**()
+more control of the flushing operations than the `pmem_persist()`
 function described above.
 
-* **void** **pmem_flush**(**const void \***addr, **size_t** len);
-* **void** **pmem_drain**(**void**);
+* ```c
+void pmem_flush(const void *addr, size_t len);
+```
+* ```c
+void pmem_drain(void);
+```
 
-  These functions provide partial versions of the **pmem_persist**()
-  function described above. **pmem_persist**() can be thought of as this:
+  These functions provide partial versions of the `pmem_persist()`
+  function described above. `pmem_persist()` can be thought of as this:
 
 ```c
 void pmem_persist(const void *addr, size_t len)
@@ -262,49 +291,57 @@ void pmem_persist(const void *addr, size_t len)
 ```
 
   These functions allow advanced programs to create their own variations
-  of **pmem_persist**(). For example, a program that needs to flush
-  several discontiguous ranges can call **pmem_flush**() for each range
-  and then follow up by calling **pmem_drain**() once.
+  of `pmem_persist()`. For example, a program that needs to flush
+  several discontiguous ranges can call `pmem_flush()` for each range
+  and then follow up by calling `pmem_drain()` once.
 
->NOTE: Some software is designed for custom platforms that obviate the
+  >NOTE: Some software is designed for custom platforms that obviate the
 need for using PCOMMIT (perhaps the platform issues PCOMMIT on shutdown
 or something similar). Even in such cases, it is recommended that
 applications using **libpmem** do not skip the step of calling
-**pmem_drain**(), either directly or by using **pmem_persist**(). The
+`pmem_drain()`, either directly or by using `pmem_persist()`. The
 recommended way to inhibit use of the PCOMMIT instruction is by setting
 the **PMEM_NO_PCOMMIT** environment variable as described in the
 **ENVIRONMENT VARIABLES** section.
 
-* **int** **pmem_has_hw_drain**(**void**);
+* ```c
+int pmem_has_hw_drain(void);
+```
 
-  The **pmem_has_hw_drain**() function returns true if the machine
+  The `pmem_has_hw_drain()` function returns true if the machine
   supports the *hardware drain* function for persistent memory, such as
   that provided by the **PCOMMIT** instruction on Intel processors. If
   support for hardware drain is not found, or cannot be detected by the
-  library, **pmem_has_hw_drain**() will return false. Although it is
+  library, `pmem_has_hw_drain()` will return false. Although it is
   typically an administrative task to provide the correct platform
   configuration for persistent memory, this function is provided for the
   less common cases where an application needs to ensure this feature is
   available. Note that the lack of this feature means that calling
-  **pmem_persist**() may not fully ensure stores are durable, without
+  `pmem_persist()` may not fully ensure stores are durable, without
   additional platform features such as Asynchronous DRAM Refresh (ADR) or
   something similar.
 
-### COPYING TO PERSISTENT MEMORY
+### COPYING TO PERSISTENT MEMORY ###
 
 The functions in this section provide optimized copying to persistent
 memory.
 
-* **void** **\*pmem_memmove_persist**(**void \***pmemdest, **const void \***src, **size_t** len);
-* **void** **\*pmem_memcpy_persist**(**void \***pmemdest, **const void \***src, **size_t** len);
-* **void** **\*pmem_memset_persist**(**void \***pmemdest, **int** c, **size_t** len);
+* ```c
+void *pmem_memmove_persist(void *pmemdest, const void *src, size_t len);
+```
+* ```c
+void *pmem_memcpy_persist(void *pmemdest, const void *src, size_t len);
+```
+* ```c
+void *pmem_memset_persist(void *pmemdest, int c, size_t len);
+```
 
-  The **pmem_memmove_persist**(), **pmem_memcpy_persist**(), and
-  **pmem_memset_persist**(), functions provide the same memory copying
+  The `pmem_memmove_persist()`, `pmem_memcpy_persist()`, and
+  `pmem_memset_persist()`, functions provide the same memory copying
   as their namesakes **memmove**(3) **memcpy**(3), and **memset**(3), and
   ensure that the result has been flushed to persistence before returning.
   For example, the following code is functionally equivalent to
-  **pmem_memmove_persist**():
+  `pmem_memmove_persist()`:
 
 ```c
 void *
@@ -317,27 +354,33 @@ return retval;
 }
 ```
 
-Calling **pmem_memmove_persist**() may out-perform the above code,
+Calling `pmem_memmove_persist()` may out-perform the above code,
 however, since the **libpmem** implementation may take advantage of the
 fact that *pmemdest* is persistent memory and use instructions such as
 *non-temporal* stores to avoid the need to flush processor caches.
 
->WARNING: Using these functions where **pmem_is_pmem**() returns false
+>WARNING: Using these functions where `pmem_is_pmem()` returns false
 may not do anything useful. Use the normal libc functions in that case.
 
-* **void** **\*pmem_memmove_nodrain**(**void \***pmemdest, **const void \***src, **size_t** len);
-* **void** **\*pmem_memcpy_nodrain**(**void \***pmemdest, **const void \***src, **size_t** len);
-* **void** **\*pmem_memset_nodrain**(**void \***pmemdest, **int** c, **size_t** len);
+* ```c
+void *pmem_memmove_nodrain(void *pmemdest, const void *src, size_t len);
+```
+* ```c
+void *pmem_memcpy_nodrain(void *pmemdest, const void *src, size_t len);
+```
+* ```c
+void *pmem_memset_nodrain(void *pmemdest, int c, size_t len);
+```
 
-  The **pmem_memmove_nodrain**(), **pmem_memcpy_nodrain**() and
-  **pmem_memset_nodrain**() functions are similar to
-  **pmem_memmove_persist**(), **pmem_memcpy_persist**(), and
-  **pmem_memset_persist**() described above, except they skip the final
-  **pmem_drain**() step. This allows applications to optimize cases where
+  The `pmem_memmove_nodrain()`, `pmem_memcpy_nodrain()` and
+  `pmem_memset_nodrain()` functions are similar to
+  `pmem_memmove_persist()`, `pmem_memcpy_persist()`, and
+  `pmem_memset_persist()` described above, except they skip the final
+  `pmem_drain()` step. This allows applications to optimize cases where
   several ranges are being copied to persistent memory, followed by a
-  single call to **pmem_drain**(). The following example illustrates how
+  single call to `pmem_drain()`. The following example illustrates how
   these functions might be used to avoid multiple calls to
-  **pmem_drain**() when copying several ranges of memory to pmem:
+  `pmem_drain()` when copying several ranges of memory to pmem:
 
 ```c
 /* … write several ranges to pmem … */
@@ -348,22 +391,24 @@ pmem_memcpy_nodrain(pmemdest2, src2, len2);
 pmem_drain();
 ```
 
->WARNING: Using **pmem_memmove_nodrain**(), **pmem_memcpy_nodrain**()
-or **pmem_memset_nodrain**() on a destination where
-**pmem_is_pmem**() returns false may not do anything useful.
+>WARNING: Using `pmem_memmove_nodrain()`, `pmem_memcpy_nodrain()`
+or `pmem_memset_nodrain()` on a destination where
+`pmem_is_pmem()` returns false may not do anything useful.
 
-### LIBRARY API VERSIONING
+### LIBRARY API VERSIONING ###
 
 This section describes how the library API is versioned, allowing
 applications to work with an evolving API.
 
-* **const char** **\*pmem_check_version**(**unsigned** major_required, **unsigned** minor_required);
+* ```c
+const char *pmem_check_version(unsigned major_required, unsigned minor_required);
+```
 
-  The **pmem_check_version**() function is used to see if the installed
+  The `pmem_check_version()` function is used to see if the installed
   **libpmem** supports the version of the library API required by an
   application. The easiest way to do this is for the application to supply
   the compile-time version information, supplied by defines in
-  **\<libpmem.h\>**, like this:
+  `<libpmem.h>`, like this:
 
 ```c
 reason = pmem_check_version(PMEM_MAJOR_VERSION, PMEM_MINOR_VERSION);
@@ -372,6 +417,7 @@ if (reason != NULL)
   /* version check failed, reason string tells you why */
 }
 ```
+
 Any mismatch in the major version number is considered a failure, but a
 library with a newer minor version number will pass this check since
 increasing minor versions imply backwards compatibility.
@@ -384,13 +430,13 @@ in version 1.0 of the library. Interfaces added after version 1.0 will
 contain the text *introduced in version x.y* in the section of this
 manual describing the feature.
 
-When the version check performed by **pmem_check_version**() is
+When the version check performed by `pmem_check_version()` is
 successful, the return value is NULL. Otherwise the return value is a
 static string describing the reason for failing the version check. The
-string returned by **pmem_check_version**() must not be modified or
+string returned by `pmem_check_version()` must not be modified or
 freed.
 
-### DEBUGGING AND ERROR HANDLING
+### DEBUGGING AND ERROR HANDLING ###
 
 Two versions of **libpmem** are typically available on a development
 system. The normal version, accessed when a program is linked using the
@@ -400,9 +446,11 @@ performs any run-time assertions. If an error is detected during the
 call to **libpmem** function, an application may retrieve an error
 message describing the reason of failure using the following function:
 
-* **const char** **\*pmem_errormsg**(**void**);
+* ```c
+const char *pmem_errormsg(void);
+```
 
-  The **pmem_errormsg**() function returns a pointer to a static buffer
+  The `pmem_errormsg()` function returns a pointer to a static buffer
   containing the last error message logged for current thread. The error
   message may include description of the corresponding error code (if
   errno was set), as returned by **strerror**(3). The error message buffer
@@ -438,7 +486,7 @@ the logging output goes to stderr.
 Setting the environment variable **PMEM_LOG_LEVEL** has no effect on
 the non-debug version of **libpmem**.
 
-### ENVIRONMENT VARIABLES
+### ENVIRONMENT VARIABLES ###
 
 **libpmem** can change its default behavior based on the following
 environment variables. These are largely intended for testing and are
@@ -446,8 +494,8 @@ not normally required.
 
 **PMEM_IS_PMEM_FORCE**=val
 
-If *val* is 0 (zero), then **pmem_is_pmem**() will always return
-false. Setting *val* to 1 causes **pmem_is_pmem**() to always return
+If *val* is 0 (zero), then `pmem_is_pmem()` will always return
+false. Setting *val* to 1 causes `pmem_is_pmem()` to always return
 true. This variable is mostly used for testing but can be used to force
 pmem behavior on a system where a range of pmem is not detectable as
 pmem for some reason.
@@ -495,8 +543,8 @@ testing.
 **PMEM_MOVNT_THRESHOLD**=val
 
 This environment variable allows overriding the minimal length of
-**pmem_memcpy_**\*(), **pmem_memmove_**\*() or
-**pmem_memset_**\*() operations, for which **libpmem** uses
+`pmem_memcpy_*()`, `pmem_memmove_*()` or
+`pmem_memset_*()` operations, for which **libpmem** uses
 *non-temporal* move instructions. Setting this environment variable to 0
 forces **libpmem** to always use the *non-temporal* move instructions if
 available. It has no effect if **PMEM_NO_MOVNT** variable is set to 1.
@@ -505,7 +553,7 @@ This variable is intended for use during library testing.
 **PMEM_MMAP_HINT**=val
 
 This environment variable allows overriding
-the hint address used by **pmem_map_file**(). If set, it also disables
+the hint address used by `pmem_map_file()`. If set, it also disables
 mapping address randomization. This variable is intended for use during
 library testing and debugging. Setting it to some fairly large value
 (i.e. 0x10000000000) will very likely result in mapping the file at the
@@ -521,13 +569,13 @@ direct pointer to the object.
   and causing the specified address to be used as a hint about where to
   place the mapping.
 
-### EXAMPLES
+### EXAMPLES ###
 
 The following example uses **libpmem** to flush changes made to raw,
 memory-mapped persistent memory.
 
->WARNING: there is nothing transactional about the **pmem_persist**() or
-**pmem_msync**() calls in this example. Interrupting the program may
+>WARNING: there is nothing transactional about the `pmem_persist()` or
+`pmem_msync()` calls in this example. Interrupting the program may
 result in a partial write to pmem. Use a transactional library such as
 **libpmemobj**(3) to avoid torn updates.
 
@@ -549,7 +597,7 @@ result in a partial write to pmem. Use a transactional library such as
 
 int main(int argc, char *argv[])
 {
-  char *pmemaddr;		
+  char *pmemaddr;
   size_t mapped_len;
   int is_pmem;
 
@@ -560,7 +608,7 @@ int main(int argc, char *argv[])
   {
     perror("pmem_map_file");
     exit(1);
-  }				
+  }
 
   /* store a string to the persistent memory */
 
@@ -586,19 +634,19 @@ int main(int argc, char *argv[])
 See [http://pmem.io/nvml/libpmem](http://pmem.io/nvml/libpmem) for more examples using the **libpmem** API.
 
 
-### ACKNOWLEDGEMENTS
+### ACKNOWLEDGEMENTS ###
 
 **libpmem** builds on the persistent memory programming model
 recommended by the SNIA NVM Programming Technical Work Group:
 
 [http://snia.org/nvmp](http://snia.org/nvmp)
 
-### SEE ALSO
+### SEE ALSO ###
 
-[**libpmemobj**(3)](../../libpmemobj/master/libpmemobj.3.html),
-[**libpmemblk**(3)](../../libpmemblk/master/libpmemblk.3.html),
-[**libpmemlog**(3)](../../libpmemlog/master/libpmemlog.3.html),
-[**libvmem**(3)](../../libvmem/master/libvmem.3.html),
+**libpmemobj**(3),
+**libpmemblk**(3),
+**libpmemlog**(3),
+**libvmem**(3),
 **open**(2),
 **mmap**(2),
 **munmap**(2),

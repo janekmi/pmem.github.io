@@ -1,104 +1,102 @@
 ---
 layout: manual
 Content-Style: 'text/css'
-title: pmempool-dump
+title: pmempool-dump(1)
 ...
-
-# pmempool-dump
 
 [NAME](#name)<br />
 [SYNOPSIS](#synopsis)<br />
-[DESCRIPTION](#DESCRIPTION)<br />
+[DESCRIPTION](#description)<br />
 [RANGE](#range)<br />
 [EXAMPLES](#examples)<br />
 [SEE ALSO](#see-also)<br />
 [PMEMPOOL](#pmempool)<br />
 
 
-### NAME
+### NAME ###
 
 **pmempool-dump** − Dump user data from specified pool
 
-### SYNOPSIS
+### SYNOPSIS ###
 
 ```
 pmempool dump [<options>] <file>
 ```
 
-### DESCRIPTION
+### DESCRIPTION ###
 
-The **pmempool** invoked with **dump** command dumps user data from specified pool file. The output format may be either binary or hexadecimal.
+The **pmempool** invoked with `dump` command dumps user data from specified pool file. The output format may be either binary or hexadecimal.
 
 By default the output format is hexadecimal.
 
-By default data is dumped to standard output. It is possible to dump data to other file by specifying **-o** option. In this case data will be appended to this file.
+By default data is dumped to standard output. It is possible to dump data to other file by specifying `-o` option. In this case data will be appended to this file.
 
-Using **-r** option you can specify number of blocks/bytes/data chunks using special text format. See **RANGE** section for details.
+Using `-r` option you can specify number of blocks/bytes/data chunks using special text format. See **RANGE** section for details.
 
-**Available options:**
+##### Available options: #####
 
-**-b, –binary**
+`-b, –binary`
 
 : Dump data in binary format.
 
-**-r, –range** \<range\>
+`-r, –range <range>`
 
 : Range of pool file to dump. This may be number of blocks for **blk** pool type or either number of bytes or number of data chunks for **log** pool type.
 
-**-c, –chunk** \<size\>
+`-c, –chunk <size>`
 
-: Size of chunk for **log** pool type. See **pmemlog_walk**() in **libpmemlog(3)** for details.
+: Size of chunk for **log** pool type. See `pmemlog_walk()` in **libpmemlog(3)** for details.
 
-**-o, –output** \<file\>
+`-o, –output <file>`
 
 : Name of output file.
 
-**-h, –help**
+`-h, –help`
 
 : Display help message and exit.
 
-### RANGE
+### RANGE ###
 
-Using **-r, –range** option it is possible to dump only a range of user data. This section describes valid format of *\<range\>* string.
+Using `-r`, `–range` option it is possible to dump only a range of user data. This section describes valid format of `<range>` string.
 
 You can specify multiple ranges separated by commas.
 
-**\<first\>-\<last\>**
+`<first>-<last>`
 
-: All blocks/bytes/data chunks from **\<first\>** to **\<last\>** will be dumped.
+: All blocks/bytes/data chunks from `<first>` to `<last>` will be dumped.
 
-**-\<last\>**
+`-<last>`
 
-: All blocks/bytes/data chunks up to **\<last\>** will be dumped.
+: All blocks/bytes/data chunks up to `<last>` will be dumped.
 
-**\<first\>-**
+`<first>-`
 
-: All blocks/bytes/data chunks starting from **\<first\>** will be dumped.
+: All blocks/bytes/data chunks starting from `<first>` will be dumped.
 
-**\<number\>**
+`<number>`
 
-: Only **\<number\>** block/byte/data chunk will be dumped.
+: Only `<number>` block/byte/data chunk will be dumped.
 
-### EXAMPLES
+### EXAMPLES ###
 
-*pmempool dump pool.bin*
+`pmempool dump pool.bin`
 
 : Dump user data from pool.bin file to standard output
 
-*pmempool dump -o output.bin -r1,10-100 pool_blk.bin*
+`pmempool dump -o output.bin -r1,10-100 pool_blk.bin`
 
 : Dump block number 1 and blocks from 10 to 100 from pool_blk.bin containing pmem blk pool to output.bin file
 
-*pmempool dump -r 1K-2K pool.bin*
+`pmempool dump -r 1K-2K pool.bin`
 
 : Dump data form 1K to 2K from pool.bin file.
 
 
-### SEE ALSO
+### SEE ALSO ###
 
 **libpmemblk(3)**, **libpmemlog(3)**, **pmempool(1)**
 
 
-### PMEMPOOL
+### PMEMPOOL ###
 
 Part of the **pmempool(1)** suite.
