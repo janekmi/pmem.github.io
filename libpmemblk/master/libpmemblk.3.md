@@ -239,7 +239,7 @@ int pmemblk_check(const char *path, size_t bsize);
 
 ### DEBUGGING AND ERROR HANDLING ###
 
-Two versions of **libpmemblk** are typically available on a development system. The normal version, accessed when a program is linked using the **-lpmemblk** option, is optimized for performance. That version skips checks that impact performance and never logs any trace information or performs any run-time assertions. If an error is detected during the call to **libpmemblk** function, an application may retrieve an error message describing the reason of failure using the following function:
+Two versions of **libpmemblk** are typically available on a development system. The normal version, accessed when a program is linked using the `-lpmemblk` option, is optimized for performance. That version skips checks that impact performance and never logs any trace information or performs any run-time assertions. If an error is detected during the call to **libpmemblk** function, an application may retrieve an error message describing the reason of failure using the following function:
 
 * ```c
 const char *pmemblk_errormsg(void);

@@ -231,7 +231,7 @@ int pmemlog_check(const char *path);
 
 ### DEBUGGING AND ERROR HANDLING ###
 
-Two versions of **libpmemlog** are typically available on a development system. The normal version, accessed when a program is linked using the **-lpmemlog** option, is optimized for performance. That version skips checks that impact performance and never logs any trace information or performs any run-time assertions. If an error is detected during the call to **libpmemlog** function, an application may retrieve an error message describing the reason of failure using the following function:
+Two versions of **libpmemlog** are typically available on a development system. The normal version, accessed when a program is linked using the `-lpmemlog` option, is optimized for performance. That version skips checks that impact performance and never logs any trace information or performs any run-time assertions. If an error is detected during the call to **libpmemlog** function, an application may retrieve an error message describing the reason of failure using the following function:
 
 * ```c
 const char *pmemlog_errormsg(void);
